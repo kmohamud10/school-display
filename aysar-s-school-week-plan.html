@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Family School Dashboard</title>
+    <style>
+      :root{
+        --bg:#eef3f0; --surface:#ffffff; --surface-2:#e3ede6; --ink:#182720; --ink-soft:#4a6259;
+        --line:#c9d8cf; --pine:#1f5c46; --pine-deep:#123c2d; --pine-bright:#2e7d5f;
+        --amber:#dd841a; --amber-soft:#fbeed0; --berry:#b23242; --berry-soft:#f9e0e3;
+        --sky:#2b6a8a; --sky-soft:#dbedf4; --shadow:0 3px 14px rgba(18,60,45,.10); --r:20px;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{ --bg:#0e1713; --surface:#1a2721; --surface-2:#24382e; --ink:#eef5f1; --ink-soft:#a9c2b6;
+          --line:#33473d; --pine:#57b58c; --pine-deep:#0f2e21; --amber:#f2a94b; --amber-soft:#3d2f16;
+          --berry:#e07a86; --berry-soft:#3d2126; --sky:#7db8d4; --sky-soft:#1d323d; --shadow:0 3px 14px rgba(0,0,0,.4); }
+      }
+      *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+      body{margin:0;background:var(--bg);color:var(--ink);font-family:"Nunito",system-ui,sans-serif;font-size:17px;line-height:1.35}
+      h1,h2,h3,.fd{font-family:"Fredoka","Nunito",sans-serif;margin:0;line-height:1.1}
+      button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+      .wrap{max-width:1440px;margin:0 auto;padding:16px 18px 28px}
+      .hidden{display:none !important}
+
+      /* ===== Top bar ===== */
+      .topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+      .topbar .school{font-size:.72rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--pine)}
+      .topbar h1{font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:700}
+      .topbar .week{color:var(--ink-soft);font-weight:800;font-size:.95rem}
+      .clock{margin-left:auto;text-align:right}
+      .clock .time{font-family:"Fredoka",sans-serif;font-size:clamp(1.6rem,3.4vw,2.3rem);font-weight:700;line-height:1}
+      .clock .cdate{color:var(--ink-soft);font-weight:800;font-size:.85rem}
+
+      /* ===== Always-on status banner (idle screen glance) ===== */
+      .status-banner{display:flex;align-items:center;gap:22px;flex-wrap:wrap;border-radius:var(--r);box-shadow:var(--shadow);
+        padding:12px 22px;margin-bottom:14px;border:2px solid var(--line);background:var(--surface)}
+      .status-banner .sb-dayname{font-family:"Fredoka",sans-serif;font-weight:700;line-height:.95;
+        font-size:clamp(2.4rem,6.5vw,4rem);letter-spacing:.01em;text-transform:uppercase}
+      .status-banner .sb-date{font-weight:900;font-size:clamp(1rem,2.2vw,1.3rem);color:var(--ink-soft);margin-top:2px}
+      .status-banner .sb-status{margin-left:auto;display:flex;align-items:center;gap:14px}
+      .status-banner .sb-ico{display:grid;place-items:center;width:72px;height:72px;border-radius:20px;background:var(--surface-2)}
+      .status-banner .sb-ico svg{width:44px;height:44px}
+      .status-banner .sb-word{font-family:"Fredoka",sans-serif;font-weight:700;line-height:.95;display:block;
+        font-size:clamp(2.2rem,6vw,3.7rem);text-transform:uppercase}
+      .status-banner .sb-label{display:block;font-weight:900;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-top:3px}
+      .status-banner.is-school{background:var(--surface-2);border-color:var(--pine)}
+      .status-banner.is-school .sb-word,.status-banner.is-school .sb-ico{color:var(--pine)}
+      .status-banner.is-off{background:var(--berry-soft);border-color:var(--berry)}
+      .status-banner.is-off .sb-word,.status-banner.is-off .sb-ico{color:var(--berry)}
+      .status-banner.is-off .sb-ico{background:rgba(255,255,255,.45)}
+      .status-banner.is-weekend{background:var(--amber-soft);border-color:var(--amber)}
+      .status-banner.is-weekend .sb-word,.status-banner.is-weekend .sb-ico{color:var(--amber)}
+      @media (max-width:620px){
+        .status-banner{gap:12px;padding:10px 14px}
+        .status-banner .sb-status{margin-left:0}
+        .status-banner .sb-ico{width:54px;height:54px;border-radius:15px}
+        .status-banner .sb-ico svg{width:34px;height:34px}
+      }
+
+      /* ===== Full-screen idle banner (the resting screen) ===== */
+      .banner-screen{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:3vh;text-align:center;padding:4vh 4vw;background:var(--surface);overflow:hidden}
+      .banner-screen.is-school{background:var(--surface-2)}
+      .banner-screen.is-off{background:var(--berry-soft)}
+      .banner-screen.is-weekend{background:var(--amber-soft)}
+      .banner-screen .bs-dayname{font-family:"Fredoka",sans-serif;font-weight:700;line-height:.92;text-transform:uppercase;
+        font-size:clamp(3.4rem,13vw,10rem);letter-spacing:.01em}
+      .banner-screen .bs-dateclock{display:flex;gap:16px;align-items:baseline;font-weight:900;color:var(--ink-soft);
+        font-size:clamp(1.5rem,3.6vw,2.6rem)}
+      .banner-screen .bs-mid{display:flex;align-items:center;justify-content:center;gap:4vw;flex-wrap:wrap}
+      .banner-screen .bs-status{display:flex;align-items:center;gap:2vw;text-align:left}
+      .banner-screen .bs-ico{display:grid;place-items:center}
+      .banner-screen .bs-ico svg{width:clamp(72px,10vw,140px);height:clamp(72px,10vw,140px)}
+      .banner-screen .bs-word{font-family:"Fredoka",sans-serif;font-weight:700;line-height:.95;display:block;text-transform:uppercase;
+        font-size:clamp(3rem,10.5vw,8.5rem)}
+      .banner-screen .bs-label{display:block;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);
+        font-size:clamp(.95rem,2vw,1.4rem);margin-top:6px}
+      .banner-screen.is-school .bs-word,.banner-screen.is-school .bs-ico{color:var(--pine)}
+      .banner-screen.is-off .bs-word,.banner-screen.is-off .bs-ico{color:var(--berry)}
+      .banner-screen.is-weekend .bs-word,.banner-screen.is-weekend .bs-ico{color:var(--amber)}
+      .banner-screen .bs-weather{display:flex;align-items:center;gap:16px;text-align:left;background:var(--pine-deep);color:#eef7f2;
+        border-radius:24px;padding:18px 26px}
+      .banner-screen .bs-wico{display:grid;place-items:center}
+      .banner-screen .bs-wico svg{width:clamp(64px,8vw,110px);height:clamp(64px,8vw,110px);color:#ffd98a}
+      .banner-screen .bs-wtemp{font-family:"Fredoka",sans-serif;font-weight:700;line-height:.95;font-size:clamp(3.4rem,9vw,7.5rem)}
+      .banner-screen .bs-wcond{font-family:"Fredoka",sans-serif;font-weight:600;font-size:clamp(1.3rem,3vw,2.2rem);display:block}
+      .banner-screen .bs-whilo{display:block;font-weight:900;font-size:clamp(.95rem,2vw,1.3rem);color:#a9d8c2;margin-top:4px}
+      @media (max-width:620px){
+        .banner-screen .bs-mid{gap:2.5vh}
+        .banner-screen .bs-weather{padding:14px 18px}
+      }
+
+      /* ===== Layout: main 3/4 + weather 1/4 ===== */
+      .layout{display:grid;grid-template-columns:minmax(0,3fr) minmax(280px,1fr);gap:14px;align-items:start}
+      .col{display:grid;gap:14px;min-width:0}
+      .card{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+
+      /* ===== Hero (selected / today) ===== */
+      .hero{display:flex;gap:18px;align-items:center;padding:18px 20px;text-align:left;width:100%}
+      .hero .big-ico{flex:0 0 92px;width:92px;height:92px;border-radius:24px;display:grid;place-items:center;background:var(--surface-2);color:var(--pine)}
+      .hero .big-ico svg{width:56px;height:56px}
+      .hero.off .big-ico{background:var(--berry-soft);color:var(--berry)}
+      .hero.event .big-ico{background:var(--amber-soft);color:var(--amber)}
+      .hero .h-status{font-family:"Fredoka",sans-serif;font-size:clamp(1.7rem,4vw,2.6rem);font-weight:700}
+      .hero .h-sub{color:var(--ink-soft);font-weight:800;font-size:1rem;margin-top:2px}
+      .hero .h-boys{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+      .chip{display:inline-flex;align-items:center;gap:7px;background:var(--surface-2);border-radius:999px;padding:6px 12px 6px 7px;font-weight:900;font-size:.88rem}
+      .chip .dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:"Fredoka",sans-serif;font-size:.72rem;font-weight:700}
+      .chip .dot.ay{background:var(--pine)} .chip .dot.ad{background:var(--sky)} .chip .dot.il{background:#2e4a62}
+      /* Today lines — one per student */
+      .today-lines{display:grid;gap:6px;margin-top:10px}
+      .tline{display:flex;align-items:center;gap:9px;background:var(--surface-2);border-radius:12px;padding:6px 12px 6px 7px;font-weight:800;font-size:.9rem;text-align:left}
+      .tline .dot{flex:0 0 28px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:"Fredoka",sans-serif;font-size:.72rem;font-weight:700}
+      .tline .dot.ay{background:var(--pine)} .tline .dot.ad{background:var(--sky)} .tline .dot.il{background:#2e4a62}
+      .tline .tname{font-family:"Fredoka",sans-serif;font-weight:600;white-space:nowrap}
+      .tline .tschool{color:var(--ink-soft);font-size:.76rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+      .tline .tstat{color:var(--ink-soft);font-weight:800}
+      /* Three equal student cards */
+      .student-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+      .student-cards .kid-btn{min-height:104px}
+      @media (max-width:900px){ .student-cards{grid-template-columns:1fr} }
+      /* Week strip attribution */
+      .day-btn .ddots{display:flex;gap:4px;margin-top:3px}
+      .day-btn .ddot{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:"Fredoka",sans-serif;font-size:.56rem;font-weight:700}
+      .day-btn .ddot.ay{background:var(--pine)} .day-btn .ddot.ad{background:var(--sky)} .day-btn .ddot.il{background:#2e4a62}
+      .day-btn .dschool{font-size:.6rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+      /* Color-coded who tags */
+      .event-row .who-tag.who-aysar{background:var(--pine);color:#fff}
+      .event-row .who-tag.who-adam{background:var(--sky);color:#fff}
+      .event-row .who-tag.who-ilhan{background:#2e4a62;color:#fff}
+      .event-row .who-tag.who-both{background:var(--surface-2);color:var(--ink)}
+      .hero .go{margin-left:auto;flex:0 0 auto;align-self:center;background:var(--pine);color:#fff;font-family:"Fredoka",sans-serif;font-weight:600;border-radius:999px;padding:14px 18px;font-size:1rem}
+      @media (prefers-color-scheme: dark){ .hero .go{color:#0e1713;background:var(--pine)} }
+
+      /* ===== Compact week strip ===== */
+      .strip-head{display:flex;align-items:baseline;gap:10px;padding:0 4px}
+      .strip-head h2{font-size:1.15rem;font-weight:600}
+      .strip-head span{color:var(--ink-soft);font-weight:800;font-size:.85rem}
+      .strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+      .day-btn{background:var(--surface);border:2px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+        padding:10px 6px 9px;min-height:132px;display:flex;flex-direction:column;align-items:center;gap:1px;text-align:center}
+      .day-btn:active{transform:scale(.97)}
+      .day-btn .dow{font-weight:900;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+      .day-btn .dnum{font-family:"Fredoka",sans-serif;font-size:1.7rem;font-weight:700;line-height:1}
+      .day-btn .dico{color:var(--pine);display:grid;place-items:center}
+      .day-btn .dico svg{width:26px;height:26px}
+      .day-btn .dlab{font-weight:900;font-size:.74rem;line-height:1.15}
+      .day-btn .dtemp{font-weight:800;font-size:.72rem;color:var(--sky)}
+      .day-btn.off{background:var(--berry-soft);border-color:var(--berry)} .day-btn.off .dico{color:var(--berry)}
+      .day-btn.event{border-color:var(--amber)} .day-btn.event .dico{color:var(--amber)}
+      .day-btn.selected{outline:4px solid var(--pine);outline-offset:-2px}
+      .day-btn.today{outline:4px solid var(--amber);outline-offset:-2px}
+      .day-btn .today-tag{background:var(--amber);color:#231600;font-size:.62rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+
+      /* ===== Gear row ===== */
+      .gear{padding:14px 16px}
+      .gear h2{font-size:1.15rem;font-weight:600;display:flex;align-items:center;gap:10px}
+      .gear h2 .cold{background:var(--sky-soft);color:var(--sky);border-radius:999px;font-family:"Nunito",sans-serif;font-weight:900;font-size:.78rem;padding:4px 10px}
+      .gear-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+      .gear-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;border-radius:14px;background:var(--surface-2);min-height:84px;justify-content:center}
+      .gear-item svg{width:38px;height:38px;color:var(--pine)}
+      .gear-item .gname{font-family:"Fredoka",sans-serif;font-weight:600;font-size:.92rem;text-align:center;line-height:1.1}
+      .gear-item .gwhy{font-size:.7rem;font-weight:800;color:var(--ink-soft);text-align:center}
+      .gear-item:active{outline:3px solid var(--amber)}
+      .gear-note{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+      .gnote{flex:1 1 220px;border-radius:12px;padding:9px 12px;font-weight:800;font-size:.85rem;background:var(--sky-soft);color:var(--ink)}
+      .gnote.ay{background:var(--surface-2)}
+
+      /* ===== Family panel ===== */
+      .family{padding:14px 16px}
+      .family h2{font-size:1.15rem;font-weight:600;display:flex;align-items:center;gap:10px}
+      .family h2 svg{width:24px;height:24px;color:var(--pine)}
+      .family h2 .fam-tag{background:var(--amber-soft);color:var(--ink);border-radius:999px;font-family:"Nunito",sans-serif;font-weight:900;font-size:.78rem;padding:4px 10px}
+      .family-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+      .fam-box{background:var(--surface-2);border-radius:14px;padding:12px 13px;min-height:96px}
+      .fam-box .fam-head{display:flex;align-items:center;gap:8px;font-family:"Fredoka",sans-serif;font-weight:600;font-size:1rem}
+      .fam-box .fam-head svg{width:22px;height:22px;color:var(--pine);flex:0 0 auto}
+      .fam-box.notes .fam-head svg{color:var(--amber)}
+      .fam-empty{margin-top:7px;font-weight:800;font-size:.9rem;color:var(--ink-soft);display:flex;gap:8px;align-items:flex-start;line-height:1.3}
+      .fam-empty svg{width:20px;height:20px;flex:0 0 auto;color:var(--pine);margin-top:1px}
+      .fam-list{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+      .fam-item{display:flex;gap:9px;align-items:flex-start;background:var(--surface);border-radius:10px;padding:9px 10px}
+      .fam-item svg{width:20px;height:20px;flex:0 0 auto;color:var(--pine);margin-top:1px}
+      .fam-item .fam-t{font-weight:900;font-size:.92rem;line-height:1.2}
+      .fam-item .fam-p{font-weight:700;font-size:.8rem;color:var(--ink-soft);line-height:1.25}
+      @media (max-width:620px){ .family-grid{grid-template-columns:1fr} }
+
+      /* ===== Action tiles ===== */
+      .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+      .tile{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+        padding:14px 12px;min-height:118px;display:flex;flex-direction:column;gap:6px;text-align:left}
+      .tile:active{transform:scale(.98)}
+      .tile .tico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--berry-soft);color:var(--berry)}
+      .tile .tico svg{width:26px;height:26px}
+      .tile.blue .tico{background:var(--sky-soft);color:var(--sky)} .tile.green .tico{background:var(--surface-2);color:var(--pine)} .tile.gold .tico{background:var(--amber-soft);color:var(--amber)}
+      .tile h3{font-size:1rem;font-weight:600;line-height:1.15}
+      .tile p{margin:0;color:var(--ink-soft);font-weight:800;font-size:.8rem}
+
+      /* ===== Weather panel (1/4 screen) ===== */
+      .weather{background:var(--pine-deep);color:#eef7f2;border-radius:var(--r);box-shadow:var(--shadow);
+        padding:20px 18px 16px;width:100%;text-align:left;display:block;min-height:100%}
+      .weather .w-loc{display:flex;align-items:center;gap:8px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;font-size:.8rem;color:#a9d8c2}
+      .weather .w-loc svg{width:18px;height:18px}
+      .weather .w-day{font-family:"Fredoka",sans-serif;font-size:1.05rem;font-weight:600;color:#fff;margin-top:2px;text-transform:none;letter-spacing:0}
+      .weather .w-main{display:flex;align-items:center;gap:8px;margin-top:6px}
+      .weather .w-ico svg{width:84px;height:84px;color:#ffd98a}
+      .weather .w-temp{font-family:"Fredoka",sans-serif;font-size:4.6rem;font-weight:700;line-height:.95}
+      .weather .w-cond{font-family:"Fredoka",sans-serif;font-size:1.35rem;font-weight:600}
+      .weather .w-feels{color:#c4e2d2;font-weight:800;font-size:.9rem}
+      .weather .w-hilo{display:flex;gap:8px;margin-top:12px}
+      .weather .w-hilo span{flex:1;background:rgba(255,255,255,.12);border-radius:12px;padding:8px 6px;text-align:center;font-weight:900;font-size:.95rem}
+      .weather .w-hilo small{display:block;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:#a9d8c2;font-weight:900}
+      .weather .w-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+      .weather .w-stat{background:rgba(255,255,255,.12);border-radius:12px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-weight:900;font-size:.88rem}
+      .weather .w-stat svg{width:20px;height:20px;color:#ffd98a;flex:0 0 auto}
+      .weather .w-stat small{display:block;font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:#a9d8c2}
+      .weather .w-wear{margin-top:12px;background:#ffd98a;color:#2a1c00;border-radius:14px;padding:11px 13px;font-weight:900;font-size:.92rem;display:flex;gap:9px;align-items:center}
+      .weather .w-wear svg{width:26px;height:26px;flex:0 0 auto}
+      .weather .w-tap{margin-top:12px;text-align:center;color:#a9d8c2;font-weight:900;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+      .weather .w-now{margin-top:8px;text-align:center;color:#c4e2d2;font-weight:700;font-size:.78rem}
+      .weather .w-live{margin-top:6px;text-align:center;color:#ffd98a;font-weight:900;font-size:.74rem;letter-spacing:.05em;text-transform:uppercase}
+
+      /* ===== Detail views ===== */
+      .backbar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+      .back-btn{background:var(--pine);color:#fff;font-family:"Fredoka",sans-serif;font-weight:600;font-size:1.05rem;
+        border-radius:999px;padding:14px 22px;min-height:56px;display:inline-flex;align-items:center;gap:9px}
+      .back-btn svg{width:22px;height:22px}
+      @media (prefers-color-scheme: dark){ .back-btn{color:#0e1713} }
+      .backbar h2{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:700}
+      .backbar .bsub{color:var(--ink-soft);font-weight:800;width:100%;margin-top:-8px}
+      .detail-grid{display:grid;grid-template-columns:minmax(280px,1fr) minmax(0,2fr);gap:14px;align-items:start}
+      .big-list{display:grid;gap:10px}
+      .event-row{display:flex;gap:14px;align-items:center;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px;text-align:left;width:100%}
+      .event-row .eico{flex:0 0 56px;width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--surface-2);color:var(--pine)}
+      .event-row .eico svg{width:32px;height:32px}
+      .event-row.gold .eico{background:var(--amber-soft);color:var(--amber)} .event-row.red .eico{background:var(--berry-soft);color:var(--berry)} .event-row.blue .eico{background:var(--sky-soft);color:var(--sky)}
+      .event-row h3{font-size:1.15rem;font-weight:600}
+      .event-row p{margin:2px 0 0;color:var(--ink-soft);font-weight:700;font-size:.92rem}
+      .event-row .who-tag{margin-left:auto;flex:0 0 auto;font-weight:900;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:5px 10px;background:var(--surface-2);color:var(--ink-soft)}
+      .kid-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+      @media (max-width:900px){ .kid-cards{grid-template-columns:1fr} }
+      .kid-btn{border-radius:16px;padding:16px;text-align:left;min-height:110px;display:flex;gap:13px;align-items:center;width:100%}
+      .kid-btn.ay{background:var(--pine);color:#fff} .kid-btn.ad{background:var(--sky);color:#fff}
+      .kid-btn.il{background:#2e4a62;color:#fff}
+      .kid-btn.il .initial{background:rgba(255,255,255,.22)}
+
+      /* ===== Ilhan / Eastview (separate school) ===== */
+      .ilhan-dash{padding:14px 16px;border-color:#2e4a62}
+      .ilhan-dash-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:11px}
+      .ilhan-dash-head h2{font-size:1.15rem;font-weight:600}
+      .ilhan-dash-head svg{width:24px;height:24px;color:#2e4a62}
+      @media (prefers-color-scheme: dark){ .ilhan-dash-head svg{color:#7db8d4} }
+      .ilhan-dash-head .il-tag{background:#dbedf4;color:#1d3a4d;border-radius:999px;font-weight:900;font-size:.78rem;padding:4px 10px}
+      @media (prefers-color-scheme: dark){ .ilhan-dash-head .il-tag{background:#1d323d;color:#cfe6f2} }
+      .ilhan-dash-head .il-note{color:var(--ink-soft);font-weight:800;font-size:.85rem;width:100%}
+      .ilhan-dash .kid-btn{width:100%}
+      .ilhan-dash-foot{margin-top:10px;display:flex;gap:8px;align-items:center;font-weight:800;font-size:.88rem;color:var(--ink-soft)}
+      .ilhan-dash-foot svg{width:20px;height:20px;flex:0 0 auto;color:#2e4a62}
+      .eastview-empty{background:var(--surface);border:1.5px dashed var(--line);border-radius:16px;padding:22px 18px;text-align:center}
+      .eastview-empty svg{width:44px;height:44px;color:#2e4a62;margin:0 auto}
+      @media (prefers-color-scheme: dark){ .eastview-empty svg{color:#7db8d4} }
+      .eastview-empty h3{font-size:1.2rem;font-weight:600;margin-top:8px}
+      .eastview-empty p{margin:6px auto 0;max-width:520px;color:var(--ink-soft);font-weight:700;font-size:.92rem}
+      .kid-btn .initial{flex:0 0 54px;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;font-family:"Fredoka",sans-serif;font-weight:700;font-size:1.15rem}
+      .kid-btn h3{font-size:1.25rem;font-weight:600;color:#fff}
+      .kid-btn p{margin:2px 0 0;font-weight:800;font-size:.86rem;color:rgba(255,255,255,.88)}
+      .sec-title{font-size:1.15rem;font-weight:600;padding:0 4px;display:flex;gap:9px;align-items:center}
+      .sec-title svg{width:22px;height:22px;color:var(--pine)}
+
+      footer{margin-top:18px;color:var(--ink-soft);font-size:.8rem;font-weight:700;text-align:center}
+
+      /* ===== Responsive ===== */
+      @media (max-width:1020px){
+        .layout{grid-template-columns:1fr}
+        .weather{order:-1}
+        .weather .w-temp{font-size:3.6rem} .weather .w-ico svg{width:64px;height:64px}
+        .tiles{grid-template-columns:repeat(2,1fr)}
+        .detail-grid{grid-template-columns:1fr}
+      }
+      @media (max-width:620px){
+        .strip{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+        .day-btn{min-height:92px;padding:8px 2px} .day-btn .dnum{font-size:1.3rem} .day-btn .dlab{font-size:.64rem}
+        .gear-row{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px} .gear-item .gname{font-size:.72rem} .gear-item svg{width:30px;height:30px}
+        .kid-cards{grid-template-columns:1fr}
+        .hero{flex-wrap:wrap} .hero .go{margin-left:0;width:100%;text-align:center}
+        .clock{margin-left:0;text-align:left}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+
+      <!-- ================= MAIN DASHBOARD ================= -->
+      <div id="view-main">
+        <!-- Always-on status banner: today at a glance, no tapping needed -->
+        <div class="status-banner is-school" id="status-banner" aria-label="Today at a glance">
+          <div>
+            <div class="sb-dayname" id="sb-dayname">Monday</div>
+            <div class="sb-date" id="sb-date">Nov 23</div>
+          </div>
+          <div class="sb-status">
+            <span class="sb-ico" id="sb-ico"></span>
+            <span>
+              <span class="sb-word" id="sb-word">School day</span>
+              <span class="sb-label" id="sb-label">Oak Ridge</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="topbar">
+          <div>
+            <div class="school">Oak Ridge Elementary · Eastview High School · District 196 · Eagan</div>
+            <h1>Family School Dashboard</h1>
+            <div class="week">Mon Nov 23 – Fri Nov 27, 2026</div>
+          </div>
+          <div class="clock" aria-label="Current time">
+            <div class="time" id="clock-time">--:--</div>
+            <div class="cdate" id="clock-date">Today</div>
+          </div>
+        </div>
+
+        <div class="layout">
+          <div class="col">
+            <!-- Hero: selected day (defaults to today) — tap for full detail -->
+            <button class="hero" id="hero" type="button" aria-label="Open full detail for the selected day">
+              <span class="big-ico" id="hero-ico"></span>
+              <span>
+                <span class="h-status" id="hero-status">School day</span>
+                <span class="h-sub" id="hero-sub" style="display:block">Monday, November 23</span>
+                <span class="today-lines">
+                  <span class="tline"><span class="dot ay">Ay</span><span class="tname">Aysar</span><span class="tschool">Oak Ridge</span><span class="tstat" id="hero-aysar-line">Grade 1 · Ms. Lyons</span></span>
+                  <span class="tline"><span class="dot ad">Ad</span><span class="tname">Adam</span><span class="tschool">Oak Ridge</span><span class="tstat" id="hero-adam-line">Preschool 4's · Ms. Kleppe</span></span>
+                  <span class="tline"><span class="dot il">Il</span><span class="tname">Ilhan</span><span class="tschool">Eastview</span><span class="tstat">Bus 307 · pickup 7:03am · enrollment in progress</span></span>
+                </span>
+              </span>
+              <span class="go">See this day ›</span>
+            </button>
+
+            <!-- Three students — equal cards, tap for each student's own view -->
+            <div>
+              <div class="strip-head"><h2>Our students</h2><span>Tap a card for that student's details</span></div>
+              <div class="student-cards" style="margin-top:8px">
+                <button class="kid-btn ay" type="button" data-kid="aysar" aria-label="Open Aysar's details — Oak Ridge Elementary"><span class="initial">Ay</span><span><h3>Aysar</h3><p>Oak Ridge Elementary · Grade 1 · Ms. Lyons</p></span></button>
+                <button class="kid-btn ad" type="button" data-kid="adam" aria-label="Open Adam's details — Oak Ridge Elementary"><span class="initial">Ad</span><span><h3>Adam</h3><p>Oak Ridge Elementary · Preschool 4's · Ms. Kleppe</p></span></button>
+                <button class="kid-btn il" type="button" data-ilhan aria-label="Open Ilhan Mahamud's details — Eastview High School"><span class="initial">Il</span><span><h3>Ilhan Mahamud</h3><p>Eastview High School · Age 16 · Bus 307 · 7:03am · No Eastview updates yet</p></span></button>
+              </div>
+            </div>
+
+            <!-- Compact week strip -->
+            <div>
+              <div class="strip-head"><h2>This week — Oak Ridge</h2><span>Tap a day to open it · dots show whose day it is</span></div>
+              <div class="strip" id="week-strip" role="list" aria-label="Week at a glance" style="margin-top:8px"></div>
+            </div>
+
+            <!-- Gear -->
+            <div class="card gear">
+              <h2>🧥 Recess gear — Oak Ridge boys <span class="cold" id="gear-cold">Mon is coldest: -1° / -11°</span></h2>
+              <div class="gear-row" id="gear-row"></div>
+              <div class="gear-note">
+                <div class="gnote">Adam: waterproof mittens only · neckwarmer, no scarf · label everything · mittens go on last</div>
+                <div class="gnote ay">Aysar: standard list above ✓ · no extra note this week</div>
+              </div>
+            </div>
+
+            <!-- Family: appointments + changes-only notes (updated when this page is republished) -->
+            <div class="card family" aria-label="Family appointments and notes">
+              <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5h4v5"/></svg> Family <span class="fam-tag">Whole family</span></h2>
+              <div class="family-grid">
+                <div class="fam-box">
+                  <div class="fam-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><circle cx="12" cy="15" r="1" fill="currentColor"/></svg> Appointments</div>
+                  <div id="family-appointments"></div>
+                </div>
+                <div class="fam-box notes">
+                  <div class="fam-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z"/></svg> Notes · changes only</div>
+                  <div id="family-notes"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Need-to-know tiles -->
+            <div class="tiles">
+              <button class="tile" type="button" data-goto-day="2026-11-23" data-focus="spare">
+                <span class="tico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg></span>
+                <h3>Spare clothes</h3><p>Oak Ridge · Aysar &amp; Adam · Nurse Sam</p>
+              </button>
+              <button class="tile blue" type="button" data-goto-day="2026-11-24" data-focus="rsvp">
+                <span class="tico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 11h6"/><path d="M9 15h4"/></svg></span>
+                <h3>2 RSVPs due Tue</h3><p>Adam · Oak Ridge · Family Engagement + Pathways</p>
+              </button>
+              <button class="tile gold" type="button" data-goto-kid="adam">
+                <span class="tico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l1 3h3v15H5V6h3l1-3Z"/><path d="M9 12h6"/></svg></span>
+                <h3>Adam: shots check</h3><p>Adam · Oak Ridge · Ask Nurse Sam — Oct notices</p>
+              </button>
+              <button class="tile green" type="button" data-goto-day="2026-12-01" data-focus="pathways">
+                <span class="tico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>
+                <h3>Dec 1 · Pathways</h3><p>Adam · Oak Ridge · 2:00–3:30pm · classroom</p>
+              </button>
+            </div>
+          </div>
+
+          <!-- Weather — about 1/4 of the screen; tap to expand -->
+          <button class="weather" id="weather-panel" type="button" aria-label="Open full weather detail">
+            <span class="w-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg> Eagan, MN <span class="w-day" id="w-day">· Monday</span></span>
+            <span class="w-main"><span class="w-ico" id="w-ico"></span><span class="w-temp" id="w-temp">-1°</span></span>
+            <span class="w-cond" id="w-cond" style="display:block">Sunny</span>
+            <span class="w-feels" id="w-feels">Dry all day · no snow or rain</span>
+            <span class="w-hilo"><span><small>High</small><span id="w-hi">-1°</span></span><span><small>Low</small><span id="w-lo">-11°</span></span><span><small>Rain / snow</small><span id="w-pop">0%</span></span></span>
+            <span class="w-stats">
+              <span class="w-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9a3 3 0 1 0-3-3"/><path d="M2 12h13a3 3 0 1 1-3 3"/><path d="M4 16h6"/></svg><span><small>Wind</small><span id="w-wind">NW 11 mph</span></span></span>
+              <span class="w-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.3 6 10.5A6 6 0 0 1 6 13.5C6 9.3 12 3 12 3Z"/></svg><span><small>Humidity</small><span id="w-hum">56%</span></span></span>
+              <span class="w-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4"/><path d="m6.5 6.5 2 2"/><path d="m17.5 6.5-2 2"/><path d="M7 17a5 5 0 0 1 10 0"/><path d="M3 21h18"/></svg><span><small>Sunrise</small><span id="w-sunrise">7:20 AM</span></span></span>
+              <span class="w-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7V3"/><path d="m6.5 10.5 2-2"/><path d="m17.5 10.5-2-2"/><path d="M7 17a5 5 0 0 1 10 0"/><path d="M3 21h18"/></svg><span><small>Sunset</small><span id="w-sunset">4:37 PM</span></span></span>
+            </span>
+            <span class="w-wear" id="w-wear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 4.5 7 3 12l3 1v7h12v-7l3-1-1.5-5L15 4a3 3 0 0 1-6 0Z"/></svg><span id="w-wear-text">Full winter gear — coldest day of the week</span></span>
+            <span class="w-tap" style="display:block">Tap for full weather ›</span>
+            <span class="w-now" id="w-now" style="display:block">Now in Eagan: 8° Cloudy · feels 6° · checked Sat Nov 21</span>
+            <span class="w-live" id="w-live-label" style="display:block">Live weather · Eagan · loading…</span>
+          </button>
+        </div>
+
+        <footer>School: Ms. Kleppe's update Nov 20, 2026 + Oak Ridge digest Nov 13, 2026 · <span id="footer-wx">Weather: weather.com forecast for Eagan, checked Sat Nov 21, 2026</span> · Full-screen banner appears after 1 minute untouched · tap anywhere for more</footer>
+      </div>
+
+      <!-- ================= DAY DETAIL ================= -->
+      <div id="view-day" class="hidden">
+        <div class="backbar">
+          <button class="back-btn" type="button" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg> Back</button>
+          <h2 id="d-title">Monday, November 23</h2>
+          <div class="bsub" id="d-sub">School day · Oak Ridge boys</div>
+        </div>
+        <div class="detail-grid">
+          <button class="weather" id="d-weather" type="button" aria-label="Open full weather detail for this day"></button>
+          <div class="col">
+            <div class="kid-cards">
+              <button class="kid-btn ay" type="button" data-kid="aysar"><span class="initial">Ay</span><span><h3>Aysar · Oak Ridge</h3><p id="d-aysar-line">Grade 1 · Ms. Lyons</p></span></button>
+              <button class="kid-btn ad" type="button" data-kid="adam"><span class="initial">Ad</span><span><h3>Adam · Oak Ridge</h3><p id="d-adam-line">Preschool 4's · Ms. Kleppe</p></span></button>
+              <button class="kid-btn il" type="button" data-ilhan><span class="initial">Il</span><span><h3>Ilhan · Eastview</h3><p>Bus 307 · pickup 7:03am · enrollment in progress · no Eastview items this day</p></span></button>
+            </div>
+            <div class="sec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 9.5l-4 4 1 5.5-5-2.8-5 2.8 1-5.5-4-4 5.5-1L12 3Z"/></svg> This day</div>
+            <div class="big-list" id="d-events"></div>
+            <div class="sec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><circle cx="12" cy="16.5" r=".6" fill="currentColor"/></svg> Need to know</div>
+            <div class="big-list" id="d-needs"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= WEATHER DETAIL ================= -->
+      <div id="view-weather" class="hidden">
+        <div class="backbar">
+          <button class="back-btn" type="button" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg> Back</button>
+          <h2 id="wx-title">Weather · Monday</h2>
+          <div class="bsub" id="wx-sub">Eagan, Minnesota · forecast checked Sat Nov 21, 2026 (weather.com)</div>
+        </div>
+        <div class="detail-grid">
+          <div class="weather" id="wx-big" style="cursor:default"></div>
+          <div class="col">
+            <div class="sec-title">👕 What to wear this day</div>
+            <div class="big-list" id="wx-wear"></div>
+            <div class="sec-title">📅 Tap a day for its weather</div>
+            <div class="strip" id="wx-strip"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= KID DETAIL ================= -->
+      <div id="view-kid" class="hidden">
+        <div class="backbar">
+          <button class="back-btn" type="button" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg> Back</button>
+          <h2 id="k-title">Adam</h2>
+          <div class="bsub" id="k-sub">Preschool 4's · Ms. Kleppe's class</div>
+        </div>
+        <div class="col">
+          <div class="sec-title" id="k-day-title">On the selected day</div>
+          <div class="big-list" id="k-day"></div>
+          <div class="sec-title">⭐ Always for <span id="k-always-name">Adam</span></div>
+          <div class="big-list" id="k-always"></div>
+        </div>
+      </div>
+
+      <!-- ================= ILHAN DETAIL (Eastview) ================= -->
+      <div id="view-ilhan" class="hidden">
+        <div class="backbar">
+          <button class="back-btn" type="button" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg> Back</button>
+          <h2 id="il-title">Ilhan Mahamud</h2>
+          <div class="bsub">Eastview High School · Age 16 · District 196</div>
+        </div>
+        <div class="col">
+          <div class="sec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-4h6v4"/></svg> Good to know</div>
+          <div class="big-list" id="il-facts"></div>
+          <div class="sec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg> This week at Eastview</div>
+          <div id="il-updates"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Full-screen idle banner: the resting screen — day, Oak Ridge status, live weather, clock. Tap anywhere to dismiss. -->
+    <div id="view-banner" class="banner-screen is-school hidden" aria-label="Today at a glance — tap anywhere to open the dashboard">
+      <div class="bs-dayname" id="bs-dayname">Monday</div>
+      <div class="bs-dateclock"><span id="bs-date">Nov 23</span><span aria-hidden="true">·</span><span id="bs-clock">--:--</span></div>
+      <div class="bs-mid">
+        <div class="bs-status">
+          <span class="bs-ico" id="bs-ico"></span>
+          <span>
+            <span class="bs-word" id="bs-word">School day</span>
+            <span class="bs-label" id="bs-label">Oak Ridge</span>
+          </span>
+        </div>
+        <div class="bs-weather">
+          <span class="bs-wico" id="bs-wico"></span>
+          <span class="bs-wtemp" id="bs-wtemp">-1°</span>
+          <span>
+            <span class="bs-wcond" id="bs-wcond">Sunny</span>
+            <span class="bs-whilo" id="bs-whilo">High -1° · Low -11°</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* ---------- Icons ---------- */
+      var S = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+      var ICO = {
+        sun: '<svg viewBox="0 0 24 24" ' + S + '><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+        cloudSun: '<svg viewBox="0 0 24 24" ' + S + '><path d="M12 3a4 4 0 0 1 4 4"/><path d="M12 3v1M5.6 5.6l.8.8M20 9h-1"/><path d="M7 20h9.5a4 4 0 0 0 .8-7.9A6 6 0 0 0 5.6 13 3.5 3.5 0 0 0 7 20Z"/></svg>',
+        cloud: '<svg viewBox="0 0 24 24" ' + S + '><path d="M7 19h9.5a4.5 4.5 0 0 0 .9-8.8A6.5 6.5 0 0 0 5 12.2 4 4 0 0 0 7 19Z"/></svg>',
+        rain: '<svg viewBox="0 0 24 24" ' + S + '><path d="M7 14h9.5a4.5 4.5 0 0 0 .9-8.8A6.5 6.5 0 0 0 5 7.2 4 4 0 0 0 7 14Z"/><path d="M8 17.5 7.2 20"/><path d="M12.5 17.5 11.7 20"/><path d="M17 17.5 16.2 20"/></svg>',
+        snow: '<svg viewBox="0 0 24 24" ' + S + '><path d="M7 14h9.5a4.5 4.5 0 0 0 .9-8.8A6.5 6.5 0 0 0 5 7.2 4 4 0 0 0 7 14Z"/><path d="M8 17v3.4M6.6 18.7h2.8M12.5 17v3.4M11.1 18.7h2.8M17 17v3.4M15.6 18.7h2.8"/></svg>',
+        thunder: '<svg viewBox="0 0 24 24" ' + S + '><path d="M7 13h9.5a4.5 4.5 0 0 0 .9-8.8A6.5 6.5 0 0 0 5 6.2 4 4 0 0 0 7 13Z"/><path d="M12.6 12.5 10.2 16.6h2.4l-1.5 3.9 3.9-4.6h-2.5l1.4-3.4Z"/></svg>',
+        fog: '<svg viewBox="0 0 24 24" ' + S + '><path d="M7 13h9.5a4.5 4.5 0 0 0 .9-8.8A6.5 6.5 0 0 0 5 6.2 4 4 0 0 0 7 13Z"/><path d="M5 17h13"/><path d="M7.5 20.5h9"/></svg>', 
+        home: '<svg viewBox="0 0 24 24" ' + S + '><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5h4v5"/></svg>',
+        backpack: '<svg viewBox="0 0 24 24" ' + S + '><path d="M6 8a6 6 0 0 1 12 0v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M6 13h12"/><path d="M10 16.5h4"/></svg>',
+        moon: '<svg viewBox="0 0 24 24" ' + S + '><path d="M20 13.5A8.5 8.5 0 1 1 10.5 4 6.8 6.8 0 0 0 20 13.5Z"/><path d="M17 4l.6 1.6L19 6l-1.4.5L17 8l-.6-1.5L15 6l1.4-.4L17 4Z"/></svg>',
+        calX: '<svg viewBox="0 0 24 24" ' + S + '><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="m10.5 14 3 3"/><path d="m13.5 14-3 3"/></svg>',
+        check: '<svg viewBox="0 0 24 24" ' + S + '><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/></svg>',
+        mail: '<svg viewBox="0 0 24 24" ' + S + '><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+        box: '<svg viewBox="0 0 24 24" ' + S + '><path d="M4 8l8-4 8 4v8l-8 4-8-4V8Z"/><path d="M4 8l8 4 8-4"/><path d="M12 12v8"/></svg>',
+        cross: '<svg viewBox="0 0 24 24" ' + S + '><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>',
+        shield: '<svg viewBox="0 0 24 24" ' + S + '><path d="M12 3l7 2.5V11c0 4.8-3 8.3-7 10-4-1.7-7-5.2-7-10V5.5L12 3Z"/><path d="m9 11.5 2.2 2.2L15.5 9.5"/></svg>',
+        shirt: '<svg viewBox="0 0 24 24" ' + S + '><path d="M9 4 4.5 7 3 12l3 1v7h12v-7l3-1-1.5-5L15 4a3 3 0 0 1-6 0Z"/><path d="M12 4v16"/></svg>',
+        mitten: '<svg viewBox="0 0 24 24" ' + S + '><path d="M8 21v-6.5C8 11 6.5 9.5 6.5 7A3.5 3.5 0 0 1 13 5.6c.8-.9 2.4-.6 2.9.5L17.5 10a3 3 0 0 1-.6 2.7L14 15.5V21"/><path d="M8 21h6"/><path d="M8 15.5h6"/></svg>',
+        hat: '<svg viewBox="0 0 24 24" ' + S + '><path d="M4 14a8 8 0 0 1 16 0"/><path d="M2.5 14h19v2.5h-19V14Z"/><path d="M12 6V4"/><circle cx="12" cy="3" r="1.2"/></svg>',
+        boot: '<svg viewBox="0 0 24 24" ' + S + '><path d="M7 3v9l-3.5 3.5A2.5 2.5 0 0 0 5.3 19h8.2a1.5 1.5 0 0 0 1.5-1.5V3"/><path d="M7 7h8"/><path d="M3.5 19h13"/></svg>',
+        pants: '<svg viewBox="0 0 24 24" ' + S + '><path d="M7 3h10l1 18h-5l-1-11-1 11H6L7 3Z"/><path d="M7 7h10"/></svg>',
+        star: '<svg viewBox="0 0 24 24" ' + S + '><path d="M12 3l2.5 5.5L20 9.5l-4 4 1 5.5-5-2.8-5 2.8 1-5.5-4-4 5.5-1L12 3Z"/></svg>',
+        cal: '<svg viewBox="0 0 24 24" ' + S + '><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>',
+        bag: '<svg viewBox="0 0 24 24" ' + S + '><path d="M5 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8Z"/><path d="M9 6V5a3 3 0 0 1 6 0v1"/><path d="M5 12h14"/></svg>',
+        heart: '<svg viewBox="0 0 24 24" ' + S + '><circle cx="12" cy="12" r="9"/><path d="M8.5 15.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M9 10h.01M15 10h.01"/></svg>',
+        bus: '<svg viewBox="0 0 24 24" ' + S + '><rect x="4" y="3" width="16" height="14" rx="2"/><path d="M4 10h16"/><path d="M8 21l1-4"/><path d="M16 21l-1-4"/><circle cx="8" cy="13.5" r=".6" fill="currentColor"/><circle cx="16" cy="13.5" r=".6" fill="currentColor"/><path d="M8 6.5h8"/></svg>',
+        school: '<svg viewBox="0 0 24 24" ' + S + '><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-4h6v4"/><path d="M9 10h.01M12 10h.01M15 10h.01M9 13.5h.01M12 13.5h.01M15 13.5h.01"/></svg>',
+        user: '<svg viewBox="0 0 24 24" ' + S + '><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>'
+      };
+
+      /* ---------- Week data (school facts unchanged; weather = weather.com Eagan forecast, checked Sat Nov 21, 2026) ---------- */
+      var DAYS = [
+        { date:"2026-11-23", dow:"Monday", dowShort:"Mon", num:23, kind:"school", status:"School day", sub:"Regular day · both boys in class",
+          wx:{ icon:"sun", cond:"Sunny", hi:-1, lo:-11, pop:"0%", wind:"NW 11 mph", hum:"56%", sunrise:"7:20 AM", sunset:"4:37 PM", note:"Dry all day · no snow or rain", wear:"Full winter gear — coldest day of the week" },
+          aysar:"Grade 1 · Ms. Lyons · regular day", adam:"Preschool 4's · Ms. Kleppe · regular day",
+          events:[ {ico:"backpack", cls:"", t:"School day", p:"Regular day for both boys", who:"Both"} ],
+          needs:[ {ico:"shirt", cls:"", t:"Winter gear — all 5 pieces", p:"Jacket · mittens · hat · boots · snow pants, labeled", who:"Both"},
+                  {ico:"cross", cls:"red", t:"Spare clothes in backpack", p:"Pants · shirt · underwear · socks — Nurse Sam", who:"Both"},
+                  {ico:"heart", cls:"blue", t:"Practice gear at home", p:"Each boy dresses himself for recess", who:"Both"},
+                  {ico:"bag", cls:"blue", t:"Check gear at night", p:"Mittens + boots dry by morning? Swap spares if damp", who:"Home"} ] },
+        { date:"2026-11-24", dow:"Tuesday", dowShort:"Tue", num:24, kind:"event", status:"Pajama Day!", sub:"Adam's class · plus 2 RSVPs due today",
+          wx:{ icon:"cloud", cond:"Mostly cloudy", hi:1, lo:-6, pop:"0%", wind:"SSW 5 mph", hum:"60%", sunrise:"7:21 AM", sunset:"4:36 PM", note:"Dry all day · no snow or rain", wear:"Full winter gear — still well below freezing" },
+          aysar:"Grade 1 · Ms. Lyons · regular day", adam:"PAJAMA DAY · wear pajamas + bring a stuffed animal",
+          events:[ {ico:"moon", cls:"gold", t:"Pajama Day — Adam", p:"Wear pajamas · bring a stuffed animal", who:"Adam"},
+                   {ico:"mail", cls:"gold", t:"RSVP due: Family Engagement", p:"Send the form back today — check Adam's Friday Folder for details", who:"Adam"},
+                   {ico:"mail", cls:"gold", t:"RSVP due: Pathways to Kindergarten", p:"Form due back today · event is Tue Dec 1, 2:00–3:30pm", who:"Adam"},
+                   {ico:"box", cls:"", t:"Lost & Found closes today", p:"Last day to claim lost items", who:"School"},
+                   {ico:"backpack", cls:"", t:"Regular school day — Aysar", p:"No special event for Grade 1", who:"Aysar"} ],
+          needs:[ {ico:"shirt", cls:"", t:"Winter gear — all 5 pieces", p:"Pajamas underneath still need full gear for recess", who:"Both"},
+                  {ico:"cross", cls:"red", t:"Spare clothes in backpack", p:"Pants · shirt · underwear · socks — Nurse Sam", who:"Both"},
+                  {ico:"bag", cls:"blue", t:"Check gear at night", p:"Mittens + boots dry by morning? Swap spares if damp", who:"Home"} ] },
+        { date:"2026-11-25", dow:"Wednesday", dowShort:"Wed", num:25, kind:"off", status:"No school", sub:"Staff Data Planning Day · both boys home",
+          wx:{ icon:"cloudSun", cond:"Partly cloudy", hi:3, lo:-8, pop:"0%", wind:"SE 6 mph", hum:"56%", sunrise:"7:23 AM", sunset:"4:35 PM", note:"Dry in the day · 10% snow chance at night", wear:"No school run — full gear for playing outside" },
+          aysar:"No school · home all day", adam:"No school · home all day",
+          events:[ {ico:"calX", cls:"red", t:"NO SCHOOL — Staff Data Planning Day", p:"Both boys home all day", who:"Both"} ],
+          needs:[ {ico:"home", cls:"red", t:"Both boys home", p:"No backpacks, no school gear run today", who:"Home"} ] },
+        { date:"2026-11-26", dow:"Thursday", dowShort:"Thu", num:26, kind:"off", status:"No school", sub:"Thanksgiving · both boys home",
+          wx:{ icon:"cloudSun", cond:"Partly cloudy", hi:4, lo:-4, pop:"10%", wind:"SSW 4 mph", hum:"67%", sunrise:"7:24 AM", sunset:"4:35 PM", note:"Mostly dry · small 10% precipitation chance", wear:"No school run — warm layers for outside time" },
+          aysar:"No school · home all day", adam:"No school · home all day",
+          events:[ {ico:"calX", cls:"red", t:"NO SCHOOL — Thanksgiving", p:"Both boys home all day", who:"Both"} ],
+          needs:[ {ico:"home", cls:"red", t:"Both boys home", p:"Holiday — no school prep today", who:"Home"} ] },
+        { date:"2026-11-27", dow:"Friday", dowShort:"Fri", num:27, kind:"off", status:"No school", sub:"Thanksgiving / Fall Break · both boys home",
+          wx:{ icon:"cloudSun", cond:"Partly cloudy", hi:6, lo:-3, pop:"10%", wind:"SW 6 mph", hum:"68%", sunrise:"7:25 AM", sunset:"4:34 PM", note:"Warmest day of the week · 10% rain chance", wear:"No school run — warm layers for outside time" },
+          aysar:"No school · home all day", adam:"No school · home all day",
+          events:[ {ico:"calX", cls:"red", t:"NO SCHOOL — Thanksgiving / Fall Break", p:"Both boys home all day", who:"Both"} ],
+          needs:[ {ico:"home", cls:"red", t:"Both boys home", p:"Break day — school starts again next week", who:"Home"} ] },
+        { date:"2026-12-01", dow:"Tuesday", dowShort:"Tue", num:1, kind:"event", status:"Pathways to Kindergarten", sub:"Adam · Tue Dec 1 · 2:00–3:30pm · his classroom",
+          wx:null,
+          aysar:"Grade 1 · regular week (no detail on this page)", adam:"Pathways to Kindergarten · 2:00–3:30pm · in his classroom",
+          events:[ {ico:"star", cls:"gold", t:"Pathways to Kindergarten — Adam", p:"Tuesday, December 1, 2026 · 2:00–3:30pm · in Adam's classroom", who:"Adam"},
+                   {ico:"mail", cls:"", t:"Questions? Laura Haag", p:"Call 952-388-1997", who:"Office"},
+                   {ico:"check", cls:"", t:"RSVP was due Tue Nov 24", p:"Form went back during this school week", who:"Adam"} ],
+          needs:[ {ico:"cal", cls:"gold", t:"Coming up — just past this week", p:"This is the one event after the Nov 23–27 week on this page", who:"Adam"} ] }
+      ];
+      var GEAR = [
+        { ico:"shirt", n:"Jacket", w:"Warm coat" },
+        { ico:"mitten", n:"Mittens", w:"Waterproof" },
+        { ico:"hat", n:"Hat", w:"Cover ears" },
+        { ico:"boot", n:"Boots", w:"Snow boots" },
+        { ico:"pants", n:"Snow pants", w:"Play in snow" }
+      ];
+      var KIDS = {
+        aysar:{ name:"Aysar", meta:"Oak Ridge Elementary · Grade 1 · Ms. Lyons' class", always:[
+          {ico:"shirt", cls:"", t:"Standard gear list", p:"Same 5 pieces as the main list — no preschool extras", who:"Gear"},
+          {ico:"check", cls:"", t:"Nothing separate this week", p:"Ms. Lyons' class sent no extra gear note in this digest", who:"Class"},
+          {ico:"cross", cls:"red", t:"Spare clothes in backpack", p:"Pants · shirt · underwear · socks — Nurse Sam", who:"Nurse"} ] },
+        adam:{ name:"Adam", meta:"Oak Ridge Elementary · Preschool 4's · Ms. Kleppe's class", always:[
+          {ico:"mitten", cls:"blue", t:"Waterproof mittens only", p:"No knit gloves · neckwarmer instead of a scarf", who:"Gear"},
+          {ico:"star", cls:"gold", t:"Dressing order practice", p:"Snow pants → coat → neckwarmer → hat → boots → mittens last", who:"Home"},
+          {ico:"check", cls:"", t:"Label everything", p:"Every piece, including each mitten, with his name", who:"Gear"},
+          {ico:"shield", cls:"red", t:"Immunization records — check", p:"Oct notices said shots were missing (final notice Oct 14, clinic options Oct 18). Check with Nurse Sam before it becomes an exclusion notice", who:"Office"},
+          {ico:"cross", cls:"red", t:"Spare clothes in backpack", p:"Pants · shirt · underwear · socks — Nurse Sam", who:"Nurse"},
+          {ico:"cal", cls:"", t:"Snow pants + boots daily?", p:"Ms. Kleppe will send word when they must come every day — that note hasn't come yet", who:"Class"} ] }
+      };
+
+      /* ---------- Family panel data ----------
+         Whole-family appointments + short changes-only notes.
+         Muse updates these lists when the page is republished — no editing on the tablet.
+         Each item: { t:"Title", p:"When / detail" } */
+      var FAMILY = {
+        appointments: [],
+        notes: []
+      };
+
+      /* ---------- Ilhan — Eastview High School ----------
+         Only the facts Kamal confirmed. No classes, teachers, grades, or weekly
+         schedule are invented for her. Eastview weekly items go in `updates`
+         when Eastview mail starts arriving — kept separate from Oak Ridge.
+         Each update: { ico, cls, t, p, who } (same shape as the boys' rows). */
+      var ILHAN = {
+        facts: [
+          { ico:"school", cls:"blue", t:"Enrolling at Eastview · 2026–27", p:"Enrollment still in progress · Registrar: Jessica Kinnard", who:"Eastview" },
+          { ico:"user", cls:"", t:"Counselor: Ms. Fisher", p:"Working through Ilhan's class placement", who:"Eastview" },
+          { ico:"bus", cls:"gold", t:"Morning bus — Bus 307", p:"Pickup 7:03am · Cinnamon Ridge Cir", who:"Bus" }
+        ],
+        updates: []
+      };
+
+      /* ---------- State + helpers ---------- */
+      function pad(n){ return (n<10?"0":"")+n; }
+      function todayStr(){ var d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+      function findDay(ds){ for(var i=0;i<DAYS.length;i++){ if(DAYS[i].date===ds) return DAYS[i]; } return null; }
+      var selected = findDay(todayStr()) || DAYS[0];
+      var currentKid = "adam";
+      var views = ["view-main","view-day","view-weather","view-kid","view-ilhan"];
+      function show(id){ for(var i=0;i<views.length;i++){ document.getElementById(views[i]).classList.toggle("hidden", views[i]!==id); } window.scrollTo(0,0); poke(); }
+      function dayIcon(d){ return d.kind==="off" ? ICO.home : (d.kind==="event" ? ICO.moon : ICO.backpack); }
+      function dayLabel(d){ return d.kind==="off" ? "No school" : (d.date==="2026-11-24" ? "Pajama Day" : (d.date==="2026-12-01" ? "Pathways" : "School")); }
+
+      function weatherHTML(d, big){
+        if(!d.wx){ return '<span class="w-loc">Eagan, MN</span><span class="w-main"><span class="w-temp" style="font-size:2rem">—</span></span><span class="w-cond" style="display:block">No forecast on this page</span><span class="w-feels">This date is past the Nov 23–27 forecast week</span>'; }
+        var w=d.wx;
+        return '<span class="w-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg> Eagan, MN <span class="w-day">· '+d.dow+'</span></span>'
+          + '<span class="w-main"><span class="w-ico">'+ICO[w.icon]+'</span><span class="w-temp">'+w.hi+'°</span></span>'
+          + '<span class="w-cond" style="display:block">'+w.cond+'</span>'
+          + '<span class="w-feels">'+w.note+'</span>'
+          + '<span class="w-hilo"><span><small>High</small>'+w.hi+'°</span><span><small>Low</small>'+w.lo+'°</span><span><small>Rain / snow</small>'+w.pop+'</span></span>'
+          + '<span class="w-stats">'
+          + '<span class="w-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9a3 3 0 1 0-3-3"/><path d="M2 12h13a3 3 0 1 1-3 3"/><path d="M4 16h6"/></svg><span><small>Wind</small>'+w.wind+'</span></span>'
+          + '<span class="w-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.3 6 10.5A6 6 0 0 1 6 13.5C6 9.3 12 3 12 3Z"/></svg><span><small>Humidity</small>'+w.hum+'</span></span>'
+          + '<span class="w-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4"/><path d="m6.5 6.5 2 2"/><path d="m17.5 6.5-2 2"/><path d="M7 17a5 5 0 0 1 10 0"/><path d="M3 21h18"/></svg><span><small>Sunrise</small>'+w.sunrise+'</span></span>'
+          + '<span class="w-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7V3"/><path d="m6.5 10.5 2-2"/><path d="m17.5 10.5-2-2"/><path d="M7 17a5 5 0 0 1 10 0"/><path d="M3 21h18"/></svg><span><small>Sunset</small>'+w.sunset+'</span></span>'
+          + '</span>'
+          + '<span class="w-wear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 4.5 7 3 12l3 1v7h12v-7l3-1-1.5-5L15 4a3 3 0 0 1-6 0Z"/></svg><span>'+w.wear+'</span></span>'
+          + (big ? '' : '<span class="w-tap" style="display:block">Tap for full weather ›</span>');
+      }
+      function rowHTML(e){
+        var w=(e.who||"").toLowerCase();
+        var wc = w.indexOf("aysar")===0 ? "who-aysar" : (w.indexOf("adam")===0 ? "who-adam" : ((w.indexOf("eastview")===0||w.indexOf("ilhan")===0||w.indexOf("bus")===0) ? "who-ilhan" : (w.indexOf("both")===0 ? "who-both" : "")));
+        return '<div class="event-row '+(e.cls||"")+'"><span class="eico">'+ICO[e.ico]+'</span><span><h3>'+e.t+'</h3><p>'+e.p+'</p></span><span class="who-tag '+wc+'">'+e.who+'</span></div>';
+      }
+      function stripHTML(el, withTemp){
+        var t=todayStr(), html="";
+        for(var i=0;i<5;i++){ var d=DAYS[i];
+          html += '<button type="button" role="listitem" class="day-btn '+(d.kind==="off"?"off":(d.kind==="event"?"event":""))+(d.date===selected.date?" selected":"")+(d.date===t?" today":"")+'" data-day="'+d.date+'" aria-label="Open '+d.dow+' November '+d.num+'">'
+            + '<span class="dow">'+d.dowShort+'</span><span class="dnum">'+d.num+'</span>'
+            + '<span class="dico">'+dayIcon(d)+'</span><span class="dlab">'+dayLabel(d)+'</span>'
+            + '<span class="ddots"><span class="ddot ay">Ay</span><span class="ddot ad">Ad</span></span><span class="dschool">Oak Ridge</span>'
+            + (withTemp && d.wx ? '<span class="dtemp">'+d.wx.hi+'° / '+d.wx.lo+'°</span>' : '')
+            + (d.date===t ? '<span class="today-tag">Today</span>' : '')
+            + '</button>';
+        }
+        el.innerHTML = html;
+        var btns = el.querySelectorAll("[data-day]");
+        for(var j=0;j<btns.length;j++){ btns[j].addEventListener("click", function(){ openDay(this.getAttribute("data-day")); }); }
+      }
+
+      /* ---------- Family panel ---------- */
+      function renderFamily(){
+        var apptEl=document.getElementById("family-appointments");
+        var noteEl=document.getElementById("family-notes");
+        if(apptEl){
+          if(!FAMILY.appointments.length){
+            apptEl.innerHTML='<div class="fam-empty">'+ICO.check+'<span>No family appointments coming up</span></div>';
+          } else {
+            var ah='<ul class="fam-list">';
+            for(var i=0;i<FAMILY.appointments.length;i++){ var a=FAMILY.appointments[i]; ah+='<li class="fam-item">'+ICO.cal+'<span><span class="fam-t">'+a.t+'</span>'+(a.p?'<span class="fam-p" style="display:block">'+a.p+'</span>':'')+'</span></li>'; }
+            apptEl.innerHTML=ah+'</ul>';
+          }
+        }
+        if(noteEl){
+          if(!FAMILY.notes.length){
+            noteEl.innerHTML='<div class="fam-empty">'+ICO.check+'<span>No changes — normal routine</span></div>';
+          } else {
+            var nh='<ul class="fam-list">';
+            for(var j=0;j<FAMILY.notes.length;j++){ var n=FAMILY.notes[j]; nh+='<li class="fam-item">'+ICO.star+'<span><span class="fam-t">'+n.t+'</span>'+(n.p?'<span class="fam-p" style="display:block">'+n.p+'</span>':'')+'</span></li>'; }
+            noteEl.innerHTML=nh+'</ul>';
+          }
+        }
+      }
+
+      /* ---------- Render main ---------- */
+      function renderMain(){
+        var d=selected;
+        var hero=document.getElementById("hero");
+        hero.className = "hero" + (d.kind==="off" ? " off" : (d.kind==="event" ? " event" : ""));
+        document.getElementById("hero-ico").innerHTML = dayIcon(d);
+        document.getElementById("hero-status").textContent = (d.date===todayStr() ? "Today: " : "") + d.status;
+        document.getElementById("hero-sub").textContent = d.dow + ", November " + d.num + " · " + d.sub;
+        var hal=document.getElementById("hero-aysar-line"); if(hal){ hal.textContent = d.aysar; }
+        var hdl=document.getElementById("hero-adam-line"); if(hdl){ hdl.textContent = d.adam; }
+        if(d.wx){
+          document.getElementById("w-day").textContent = "· " + d.dow;
+          document.getElementById("w-ico").innerHTML = ICO[d.wx.icon];
+          document.getElementById("w-temp").textContent = d.wx.hi + "°";
+          document.getElementById("w-cond").textContent = d.wx.cond;
+          document.getElementById("w-feels").textContent = d.wx.note;
+          document.getElementById("w-hi").textContent = d.wx.hi + "°";
+          document.getElementById("w-lo").textContent = d.wx.lo + "°";
+          document.getElementById("w-pop").textContent = d.wx.pop;
+          document.getElementById("w-wind").textContent = d.wx.wind;
+          document.getElementById("w-hum").textContent = d.wx.hum;
+          document.getElementById("w-sunrise").textContent = d.wx.sunrise;
+          document.getElementById("w-sunset").textContent = d.wx.sunset;
+          document.getElementById("w-wear-text").textContent = d.wx.wear;
+        }
+        var coldest=null;
+        for(var ci=0;ci<5;ci++){ if(DAYS[ci].wx && (!coldest || DAYS[ci].wx.lo<coldest.wx.lo)) coldest=DAYS[ci]; }
+        if(coldest){ document.getElementById("gear-cold").textContent = coldest.dowShort + " is coldest: " + coldest.wx.hi + "° / " + coldest.wx.lo + "°"; }
+        stripHTML(document.getElementById("week-strip"), true);
+      }
+
+      /* ---------- Day detail ---------- */
+      function openDay(ds){
+        var d=findDay(ds); if(!d) return; selected=d; renderMain();
+        document.getElementById("d-title").textContent = d.dow + ", " + (d.date==="2026-12-01" ? "December 1" : "November " + d.num);
+        document.getElementById("d-sub").textContent = d.status + " · " + d.sub + " · Oak Ridge items below are the boys' — Ilhan (Eastview) has no items this day";
+        document.getElementById("d-aysar-line").textContent = d.aysar;
+        document.getElementById("d-adam-line").textContent = d.adam;
+        document.getElementById("d-weather").innerHTML = weatherHTML(d, false);
+        var ev="", i; for(i=0;i<d.events.length;i++){ ev+=rowHTML(d.events[i]); }
+        document.getElementById("d-events").innerHTML = ev;
+        var nd=""; for(i=0;i<d.needs.length;i++){ nd+=rowHTML(d.needs[i]); }
+        document.getElementById("d-needs").innerHTML = nd;
+        show("view-day");
+      }
+
+      /* ---------- Weather detail ---------- */
+      function openWeather(){
+        var d=selected;
+        document.getElementById("wx-title").textContent = "Weather · " + d.dow + " Nov " + d.num;
+        document.getElementById("wx-big").innerHTML = weatherHTML(d, true);
+        var wearRows;
+        if(d.kind==="off"){
+          wearRows = [ {ico:"home", cls:"red", t:"No school run today", p:d.wx ? d.wx.wear : "", who:"Home"},
+                       {ico:"shirt", cls:"", t:"Playing outside?", p:"Jacket · hat · mittens — mornings are near " + (d.wx?d.wx.lo:"") + "°", who:"Outside"} ];
+        } else {
+          wearRows = [ {ico:"shirt", cls:"", t:"Jacket", p:"Warm winter coat, zipped up", who:"Gear"},
+                       {ico:"mitten", cls:"", t:"Waterproof mittens", p:"Adam: waterproof only, no knit gloves", who:"Gear"},
+                       {ico:"hat", cls:"", t:"Hat (+ neckwarmer for Adam)", p:"Cover ears · Adam wears a neckwarmer, not a scarf", who:"Gear"},
+                       {ico:"boot", cls:"", t:"Boots", p:"Snow boots for the playground", who:"Gear"},
+                       {ico:"pants", cls:"", t:"Snow pants", p:"On before recess", who:"Gear"} ];
+        }
+        var html=""; for(var i=0;i<wearRows.length;i++){ html+=rowHTML(wearRows[i]); }
+        document.getElementById("wx-wear").innerHTML = html;
+        stripHTML(document.getElementById("wx-strip"), true);
+        show("view-weather");
+      }
+
+      /* ---------- Kid detail ---------- */
+      function openKid(k){
+        currentKid=k; var kid=KIDS[k], d=selected;
+        document.getElementById("k-title").textContent = kid.name;
+        document.getElementById("k-sub").textContent = kid.meta;
+        document.getElementById("k-always-name").textContent = kid.name;
+        document.getElementById("k-day-title").textContent = "On " + d.dow + " Nov " + d.num + " — " + kid.name;
+        var dayLine = (k==="aysar") ? d.aysar : d.adam;
+        var dayRows = [ { ico: dayIcon(d), cls: d.kind==="off"?"red":(d.kind==="event"?"gold":""), t: d.status, p: dayLine, who: kid.name } ];
+        for(var i=0;i<d.events.length;i++){ var e=d.events[i]; if(e.who===kid.name || e.who==="Both"){ dayRows.push(e); } }
+        var html=""; for(var j=0;j<dayRows.length;j++){ html+=rowHTML(dayRows[j]); }
+        document.getElementById("k-day").innerHTML = html;
+        var ah=""; for(var m=0;m<kid.always.length;m++){ ah+=rowHTML(kid.always[m]); }
+        document.getElementById("k-always").innerHTML = ah;
+        show("view-kid");
+      }
+
+      /* ---------- Ilhan detail (Eastview) ---------- */
+      function openIlhan(){
+        var fh=""; for(var i=0;i<ILHAN.facts.length;i++){ fh+=rowHTML(ILHAN.facts[i]); }
+        document.getElementById("il-facts").innerHTML = fh;
+        var up=document.getElementById("il-updates");
+        if(!ILHAN.updates.length){
+          up.innerHTML = '<div class="eastview-empty">'+ICO.mail+'<h3>No Eastview updates yet</h3><p>Ilhan\'s weekly school emails haven\'t started arriving yet. When Eastview mail comes in, her items will appear here — kept separate from Aysar &amp; Adam\'s Oak Ridge items.</p></div>';
+        } else {
+          var uh='<div class="big-list">'; for(var j=0;j<ILHAN.updates.length;j++){ uh+=rowHTML(ILHAN.updates[j]); } uh+='</div>';
+          up.innerHTML = uh;
+        }
+        show("view-ilhan");
+      }
+
+      /* ---------- Gear row (tap an item to open weather / what-to-wear) ---------- */
+      (function(){
+        var html="";
+        for(var i=0;i<GEAR.length;i++){ html += '<button type="button" class="gear-item" data-gear="1" aria-label="'+GEAR[i].n+' — open what to wear">'+ICO[GEAR[i].ico]+'<span class="gname">'+GEAR[i].n+'</span><span class="gwhy">'+GEAR[i].w+'</span></button>'; }
+        document.getElementById("gear-row").innerHTML = html;
+        var items=document.querySelectorAll("[data-gear]");
+        for(var j=0;j<items.length;j++){ items[j].addEventListener("click", openWeather); }
+      })();
+
+      /* ---------- Wiring ---------- */
+      document.getElementById("hero").addEventListener("click", function(){ openDay(selected.date); });
+      document.getElementById("weather-panel").addEventListener("click", openWeather);
+      document.getElementById("d-weather").addEventListener("click", openWeather);
+      var backs=document.querySelectorAll("[data-back]");
+      for(var b=0;b<backs.length;b++){ backs[b].addEventListener("click", function(){ show("view-main"); }); }
+      var kidBtns=document.querySelectorAll("[data-kid]");
+      for(var k2=0;k2<kidBtns.length;k2++){ kidBtns[k2].addEventListener("click", function(){ openKid(this.getAttribute("data-kid")); }); }
+      var ilhanBtns=document.querySelectorAll("[data-ilhan]");
+      for(var i2=0;i2<ilhanBtns.length;i2++){ ilhanBtns[i2].addEventListener("click", openIlhan); }
+      var tiles=document.querySelectorAll("[data-goto-day]");
+      for(var t2=0;t2<tiles.length;t2++){ tiles[t2].addEventListener("click", function(){ openDay(this.getAttribute("data-goto-day")); }); }
+      var kidTiles=document.querySelectorAll("[data-goto-kid]");
+      for(var t3=0;t3<kidTiles.length;t3++){ kidTiles[t3].addEventListener("click", function(){ selected = findDay(todayStr()) || DAYS[0]; renderMain(); openKid(this.getAttribute("data-goto-kid")); }); }
+
+      /* ---------- Always-on status banner (Oak Ridge status for the real today) ---------- */
+      function shortDateOf(d){
+        var months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        var parts=d.date.split("-");
+        return d.dowShort + " " + months[parseInt(parts[1],10)-1] + " " + d.num;
+      }
+      /* Status for the real today — shared by the small top banner and the full-screen idle banner */
+      function bannerInfo(){
+        var ts=todayStr(), today=findDay(ts), dow=new Date().getDay();
+        function statusWord(d){ return d.kind==="off" ? "NO SCHOOL" : "SCHOOL DAY"; }
+        function nextShown(){ for(var i=0;i<DAYS.length;i++){ if(DAYS[i].date>ts) return DAYS[i]; } return null; }
+        var word, label, cls, ico;
+        if(dow===0 || dow===6){
+          word="WEEKEND"; cls="is-weekend"; ico=ICO.home;
+          var nd=nextShown();
+          label = nd ? "Next school day: " + shortDateOf(nd) + " — " + statusWord(nd) + " · Oak Ridge" : "Oak Ridge";
+        } else if(today){
+          word=statusWord(today);
+          cls = today.kind==="off" ? "is-off" : "is-school";
+          ico = today.kind==="off" ? ICO.home : ICO.school;
+          label="Oak Ridge";
+        } else {
+          var nd2=nextShown();
+          if(nd2){
+            word=statusWord(nd2);
+            cls = nd2.kind==="off" ? "is-off" : "is-school";
+            ico = nd2.kind==="off" ? ICO.home : ICO.school;
+            label="Next school day: " + shortDateOf(nd2) + " · Oak Ridge";
+          } else {
+            word="COMING SOON"; cls="is-weekend"; ico=ICO.cal;
+            label="Next week is posted Friday night · Oak Ridge";
+          }
+        }
+        return { word:word, label:label, cls:cls, ico:ico };
+      }
+      function renderBanner(){
+        var banner=document.getElementById("status-banner"); if(!banner) return;
+        var now=new Date();
+        var dayNames=["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"];
+        var months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        document.getElementById("sb-dayname").textContent = dayNames[now.getDay()];
+        document.getElementById("sb-date").textContent = months[now.getMonth()] + " " + now.getDate();
+        var info=bannerInfo();
+        banner.className = "status-banner " + info.cls;
+        document.getElementById("sb-ico").innerHTML = info.ico;
+        document.getElementById("sb-word").textContent = info.word;
+        document.getElementById("sb-label").textContent = info.label;
+      }
+
+      /* ---------- Full-screen idle banner (day · Oak Ridge status · live weather · clock) ---------- */
+      function renderFullBanner(){
+        var el=document.getElementById("view-banner"); if(!el) return;
+        var wasHidden=el.classList.contains("hidden");
+        var now=new Date();
+        var dayNames=["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"];
+        var months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        var h=now.getHours(), ap=h>=12?"PM":"AM"; h=h%12; if(h===0)h=12;
+        document.getElementById("bs-dayname").textContent = dayNames[now.getDay()];
+        document.getElementById("bs-date").textContent = months[now.getMonth()] + " " + now.getDate();
+        document.getElementById("bs-clock").textContent = h+":"+pad(now.getMinutes())+" "+ap;
+        var info=bannerInfo();
+        el.className = "banner-screen " + info.cls + (wasHidden ? " hidden" : "");
+        document.getElementById("bs-ico").innerHTML = info.ico;
+        document.getElementById("bs-word").textContent = info.word;
+        document.getElementById("bs-label").textContent = info.label;
+        /* Weather: live current conditions when available, else today's shown forecast */
+        var ts=todayStr(), wxDay=findDay(ts);
+        if(!wxDay){ for(var i=0;i<DAYS.length;i++){ if(DAYS[i].date>ts){ wxDay=DAYS[i]; break; } } }
+        var temp=null, cond="", wico=ICO.cloud;
+        if(typeof LIVE!=="undefined" && LIVE && LIVE.ok && LIVE.current){
+          temp=LIVE.current.temp; cond=LIVE.current.cond; wico=ICO[LIVE.current.icon]||ICO.cloud;
+        } else if(wxDay && wxDay.wx){
+          temp=wxDay.wx.hi; cond=wxDay.wx.cond; wico=ICO[wxDay.wx.icon]||ICO.cloud;
+        }
+        document.getElementById("bs-wico").innerHTML = wico;
+        document.getElementById("bs-wtemp").textContent = (temp===null ? "—" : temp+"°");
+        document.getElementById("bs-wcond").textContent = cond;
+        var hilo=document.getElementById("bs-whilo");
+        if(wxDay && wxDay.wx){ hilo.textContent = "High "+wxDay.wx.hi+"° · Low "+wxDay.wx.lo+"°"; hilo.style.display=""; }
+        else { hilo.style.display="none"; }
+      }
+
+      /* ---------- Clock ---------- */
+      function tick(){
+        var now=new Date();
+        var days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+        var months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        var h=now.getHours(), ap=h>=12?"PM":"AM"; h=h%12; if(h===0)h=12;
+        document.getElementById("clock-time").textContent = h+":"+pad(now.getMinutes())+" "+ap;
+        document.getElementById("clock-date").textContent = days[now.getDay()]+", "+months[now.getMonth()]+" "+now.getDate();
+        renderBanner();
+        renderFullBanner();
+      }
+      tick(); setInterval(tick, 20000);
+
+      /* ---------- Idle: full-screen banner after 60s untouched, on every view.
+           Any tap/touch dismisses it back to the main dashboard and resets the timer. ---------- */
+      var idleTimer=null, bannerUp=false, dismissAt=0;
+      function poke(){
+        if(idleTimer){ clearTimeout(idleTimer); }
+        idleTimer=setTimeout(showBannerScreen, 60000);
+      }
+      function showBannerScreen(){
+        bannerUp=true;
+        renderFullBanner();
+        document.getElementById("view-banner").classList.remove("hidden");
+      }
+      function dismissBanner(){
+        if(!bannerUp) return;
+        bannerUp=false; dismissAt=Date.now();
+        document.getElementById("view-banner").classList.add("hidden");
+        selected = findDay(todayStr()) || DAYS[0];
+        renderMain(); show("view-main");
+        poke();
+      }
+      document.addEventListener("pointerdown", function(){ if(bannerUp){ dismissBanner(); } else { poke(); } }, {passive:true});
+      document.addEventListener("keydown", function(){ if(bannerUp){ dismissBanner(); } else { poke(); } });
+      /* Swallow the click that follows a dismiss tap, so it can't land on a control underneath */
+      document.addEventListener("click", function(e){ if(Date.now()-dismissAt<500){ e.preventDefault(); e.stopPropagation(); } }, true);
+
+      /* ---------- Live weather (Open-Meteo, Eagan MN — the page's only external call) ---------- */
+      var LIVE = { ok:false, current:null, updatedAt:null };
+      function compass(deg){ var dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]; return dirs[Math.round(deg/22.5)%16]; }
+      function fmtTime(iso){ var t=(iso||"").split("T")[1]; if(!t) return iso; var parts=t.split(":"); var h=parseInt(parts[0],10); var ap=h>=12?"PM":"AM"; h=h%12; if(h===0)h=12; return h+":"+parts[1]+" "+ap; }
+      function fmtClock(d){ var h=d.getHours(), ap=h>=12?"PM":"AM"; h=h%12; if(h===0)h=12; return h+":"+pad(d.getMinutes())+" "+ap; }
+      function codeCat(code){
+        if(code===71||code===73||code===75||code===77||code===85||code===86) return "snow";
+        if(code===95||code===96||code===99) return "thunder";
+        if(code===45||code===48) return "fog";
+        if(code===51||code===53||code===55||code===56||code===57||code===61||code===63||code===65||code===66||code===67||code===80||code===81||code===82) return "rain";
+        return "dry";
+      }
+      function codeToWx(code){
+        if(code===0) return {icon:"sun", cond:"Sunny"};
+        if(code===1) return {icon:"cloudSun", cond:"Mostly sunny"};
+        if(code===2) return {icon:"cloudSun", cond:"Partly cloudy"};
+        if(code===3) return {icon:"cloud", cond:"Cloudy"};
+        if(code===45||code===48) return {icon:"fog", cond:"Foggy"};
+        if(code===51||code===53||code===55) return {icon:"rain", cond:"Drizzle"};
+        if(code===56||code===57) return {icon:"rain", cond:"Freezing drizzle"};
+        if(code===61) return {icon:"rain", cond:"Light rain"};
+        if(code===63) return {icon:"rain", cond:"Rain"};
+        if(code===65) return {icon:"rain", cond:"Heavy rain"};
+        if(code===66||code===67) return {icon:"rain", cond:"Freezing rain"};
+        if(code===71) return {icon:"snow", cond:"Light snow"};
+        if(code===73) return {icon:"snow", cond:"Snow"};
+        if(code===75) return {icon:"snow", cond:"Heavy snow"};
+        if(code===77) return {icon:"snow", cond:"Snow"};
+        if(code===80||code===81||code===82) return {icon:"rain", cond:"Rain showers"};
+        if(code===85||code===86) return {icon:"snow", cond:"Snow showers"};
+        if(code===95||code===96||code===99) return {icon:"thunder", cond:"Thunderstorm"};
+        return {icon:"cloud", cond:"Cloudy"};
+      }
+      function deriveNote(code, pop){
+        var cat=codeCat(code);
+        if(cat==="snow") return "Snow expected · dress for a snowy day";
+        if(cat==="thunder") return "Thunderstorms possible · check before recess";
+        if(cat==="rain") return pop>0 ? "Rain likely · "+pop+"% chance · wet day" : "Rain expected · wet day";
+        if(cat==="fog") return "Foggy · dry otherwise";
+        if(pop>=30) return "Mostly dry · "+pop+"% precipitation chance";
+        if(pop>0) return "Mostly dry · small "+pop+"% precipitation chance";
+        return "Dry all day · no snow or rain";
+      }
+      function deriveWear(hi, lo, code, kind){
+        /* hi / lo are Celsius */
+        var cat=codeCat(code), base;
+        if(cat==="snow"){ base="Full winter gear + snow boots — snow expected"; }
+        else if(cat==="rain"){ base = lo<=0 ? "Full winter gear + waterproof boots — wet & cold" : "Rain gear + warm layers — rain expected"; }
+        else if(cat==="thunder"){ base="Full winter gear — storms possible, check before recess"; }
+        else if(lo<=-9){ base="Full winter gear — very cold, hat & mittens a must"; }
+        else if(lo<=-4){ base="Full winter gear — well below freezing"; }
+        else if(hi<=3){ base="Full winter gear — cold all day"; }
+        else if(hi<=9){ base="Warm coat, hat & mittens — chilly day"; }
+        else if(hi<=14){ base="Jacket + layers — cool day"; }
+        else { base="Light jacket — mild day"; }
+        if(kind==="off"){ return "No school run — " + base.charAt(0).toLowerCase() + base.slice(1); }
+        return base;
+      }
+      function setLiveLabel(){
+        var el=document.getElementById("w-live-label");
+        if(el){ el.textContent = LIVE.ok ? "Live weather · Eagan · updated " + fmtClock(LIVE.updatedAt) : "Last-known weather · Eagan · snapshot checked Sat Nov 21, 2026"; }
+        var sub=document.getElementById("wx-sub");
+        if(sub){ sub.textContent = "Eagan, Minnesota · " + (LIVE.ok ? "Live weather · updated " + fmtClock(LIVE.updatedAt) + " (Open-Meteo)" : "Last-known values · snapshot checked Sat Nov 21, 2026 (weather.com)"); }
+        var fw=document.getElementById("footer-wx");
+        if(fw){ fw.textContent = LIVE.ok ? "Weather: live for Eagan (Open-Meteo) · updated " + fmtClock(LIVE.updatedAt) : "Weather: last-known snapshot for Eagan, checked Sat Nov 21, 2026 (weather.com)"; }
+      }
+      function applyLive(data){
+        try{
+          var cur=data.current, daily=data.daily;
+          if(!cur || !daily || !daily.time) return;
+          var cw=codeToWx(cur.weather_code);
+          LIVE.current={ temp:Math.round(cur.temperature_2m), feels:Math.round(cur.apparent_temperature), cond:cw.cond, icon:cw.icon, hum:Math.round(cur.relative_humidity_2m) };
+          for(var i=0;i<daily.time.length;i++){
+            var d=findDay(daily.time[i]); if(!d) continue;
+            var code=daily.weather_code[i], mapped=codeToWx(code);
+            var hi=Math.round(daily.temperature_2m_max[i]), lo=Math.round(daily.temperature_2m_min[i]);
+            var pop=(daily.precipitation_probability_max && daily.precipitation_probability_max[i]!=null) ? Math.round(daily.precipitation_probability_max[i]) : 0;
+            var windSpd=daily.wind_speed_10m_max ? Math.round(daily.wind_speed_10m_max[i]) : 0;
+            var windDir=daily.wind_direction_10m_dominant ? daily.wind_direction_10m_dominant[i] : 0;
+            if(!d.wx){ d.wx={}; }
+            d.wx.icon=mapped.icon; d.wx.cond=mapped.cond;
+            d.wx.hi=hi; d.wx.lo=lo; d.wx.pop=pop+"%";
+            d.wx.wind=compass(windDir)+" "+windSpd+" mph";
+            if(daily.time[i]===todayStr()){ d.wx.hum=LIVE.current.hum+"%"; }
+            d.wx.sunrise=fmtTime(daily.sunrise[i]);
+            d.wx.sunset=fmtTime(daily.sunset[i]);
+            d.wx.note=deriveNote(code, pop);
+            d.wx.wear=deriveWear(hi, lo, code, d.kind);
+          }
+          LIVE.ok=true; LIVE.updatedAt=new Date();
+          var nowEl=document.getElementById("w-now");
+          if(nowEl){ nowEl.textContent="Now in Eagan: "+LIVE.current.temp+"° "+LIVE.current.cond+" · feels "+LIVE.current.feels+"°"; }
+          setLiveLabel();
+          renderMain();
+          renderFullBanner();
+          if(!document.getElementById("view-day").classList.contains("hidden")){ openDay(selected.date); }
+          else if(!document.getElementById("view-weather").classList.contains("hidden")){ openWeather(); }
+        }catch(e){ LIVE.ok=false; setLiveLabel(); }
+      }
+      function fetchWeather(){
+        if(typeof fetch!=="function"){ setLiveLabel(); return; }
+        var url="https://api.open-meteo.com/v1/forecast?latitude=44.8045&longitude=-93.1666&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant&temperature_unit=celsius&wind_speed_unit=mph&timezone=America%2FChicago&start_date=2026-11-23&end_date=2026-11-27";
+        fetch(url).then(function(r){ if(!r.ok){ throw new Error("weather " + r.status); } return r.json(); })
+          .then(applyLive)
+          .catch(function(){ LIVE.ok=false; setLiveLabel(); });
+      }
+      fetchWeather();
+      setInterval(fetchWeather, 30*60*1000);
+
+      renderFamily();
+      renderMain();
+      poke();
+    </script>
+  </body>
+</html>
